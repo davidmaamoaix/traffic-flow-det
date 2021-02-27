@@ -57,4 +57,4 @@ def load_yolo(weights_path, cfg_path, names_path, config):
     # network setup
     network = cv.dnn.readNetFromDarknet(cfg_path, weights_path)
 
-    return YoloWrapper(network, {**config, classes: classes})
+    return YoloWrapper(network, {**config, 'classes': classes})
