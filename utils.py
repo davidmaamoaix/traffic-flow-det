@@ -16,6 +16,7 @@ class YoloWrapper:
         config: dict, see 'load_yolo' method
         '''
         self.network = network
+        self.classes = config['classes']
 
         self.img_size = config.get('image_size', 416)
         self.confidence_thres = config.get('confidence_thres', 0.75)
@@ -36,8 +37,36 @@ class YoloWrapper:
         self.network.setInput(blob)
 
         layered_output = self.network.forward(self.out_names)
-        print(layered_output)
         output = np.vstack(layered_output)
+        predictions = np.argmax(output[:, 5:], axis=1)
+
+        height, width, _ = image.shape
+        boxes = np.zeros((predictions.shape[0], 4), dtype=np.int)
+
+        # since all points are in percentage of the image size,
+        # scaling by the image size is done to obtain the absolute value
+
+        # x and y
+        boxes[:, 0] = (output[:, 0] - output[:, 2] / 2) * width
+        boxes[:, 1] = (output[:, 1] - output[:, 3] / 2) * height
+
+        # width and height
+        boxes[:, 2] = output[:, 2] * width
+        boxes[:, 3] = output[:, 3] * height
+
+        # filtered is an array of indices of the valid boxes
+        filtered = cv.dnn.NMSBoxes(
+            boxes.tolist(),
+            output[:, 4].tolist(),
+            self.confidence_thres,
+            0.2 # non max suppresion threshold
+        )
+
+        indices = np.array(filtered).flatten()
+        valid_boxes = boxes[indices]
+        output_classes = self.classes[predictions[indices]]
+
+        return valid_boxes, output_classes
 
 
 def load_yolo(weights_path, cfg_path, names_path, config):
@@ -52,7 +81,8 @@ def load_yolo(weights_path, cfg_path, names_path, config):
 
     # read object classes
     with open(names_path, 'r') as f:
-        classes = [i.strip() for i in f.readlines()]
+        # for ease of indexing
+        classes = np.array([i.strip() for i in f.readlines()])
 
     # network setup
     network = cv.dnn.readNetFromDarknet(cfg_path, weights_path)

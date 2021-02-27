@@ -13,6 +13,9 @@ def process_video(video):
     width = int(reader.get(cv.CAP_PROP_FRAME_WIDTH))
     height = int(reader.get(cv.CAP_PROP_FRAME_HEIGHT))
 
+    if not os.path.exists('output'):
+        os.mkdir('output')
+
     output_name = datetime.datetime.now().strftime("%b-%d-%Y-%H-%M-%S.avi")
     writer = cv.VideoWriter(
         os.path.join('output/', output_name),
@@ -25,15 +28,16 @@ def process_video(video):
         'models/yolov3.weights',
         'models/yolov3_coco.cfg',
         'models/coco.names',
-        {} # default is good
+        {}
     )
 
     while True:
-
         ret, frame = reader.read()
 
         if not ret:
             break
+
+        model.forward(frame)
 
         writer.write(frame)
 
