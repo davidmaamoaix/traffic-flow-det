@@ -1,4 +1,5 @@
 import os
+import pathlib
 import argparse
 
 
@@ -13,7 +14,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Pipelines for traffic flow detection'
     )
+    parser.add_argument('video', type=str, help='Path of the input video')
     parser.add_argument('pipeline', type=int, help='ID of the pipeline to use')
     args = parser.parse_args()
 
     pipeline = args.pipeline
+    exec_func = __import__(PIPELINES[pipeline]).process_video
+
+    exec_func(os.path.abspath(args.video))
