@@ -1,28 +1,17 @@
 import os
 import cv2 as cv
 import numpy as np
-import datetime
 
-from utils import load_yolo
+from utils import load_yolo, output_stream
 
 
 def process_video(video):
 
     reader = cv.VideoCapture(video)
-    fps = reader.get(cv.CAP_PROP_FPS)
-    width = int(reader.get(cv.CAP_PROP_FRAME_WIDTH))
-    height = int(reader.get(cv.CAP_PROP_FRAME_HEIGHT))
+    writer = output_stream(reader)
 
     if not os.path.exists('output'):
         os.mkdir('output')
-
-    output_name = datetime.datetime.now().strftime("%b-%d-%Y-%H-%M-%S.avi")
-    writer = cv.VideoWriter(
-        os.path.join('output/', output_name),
-        cv.VideoWriter_fourcc(*'MJPG'),
-        fps,
-        (width, height)
-    )
 
     model = load_yolo(
         'models/yolov3.weights',
@@ -37,7 +26,12 @@ def process_video(video):
         if not ret:
             break
 
-        model.forward(frame)
+        boxes, labels = model.forward(frame)
+
+        for box, label in zip(boxes, labels):
+            x, y, w, h = box
+
+            cv.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 1)
 
         writer.write(frame)
 

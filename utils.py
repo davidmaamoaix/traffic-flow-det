@@ -1,9 +1,12 @@
+import os
+import datetime
 import cv2 as cv
 import numpy as np
 
 
 __all__ = [
-	'load_yolo'
+	'load_yolo',
+    'output_stream'
 ]
 
 
@@ -88,3 +91,20 @@ def load_yolo(weights_path, cfg_path, names_path, config):
     network = cv.dnn.readNetFromDarknet(cfg_path, weights_path)
 
     return YoloWrapper(network, {**config, 'classes': classes})
+
+
+def output_stream(reader):
+    '''returns a VideoWriter for easier writing'''
+
+    fps = reader.get(cv.CAP_PROP_FPS)
+    width = int(reader.get(cv.CAP_PROP_FRAME_WIDTH))
+    height = int(reader.get(cv.CAP_PROP_FRAME_HEIGHT))
+
+    output_name = datetime.datetime.now().strftime("%b-%d-%Y-%H-%M-%S.avi")
+
+    return cv.VideoWriter(
+        os.path.join('output/', output_name),
+        cv.VideoWriter_fourcc(*'MJPG'),
+        fps,
+        (width, height)
+    )
