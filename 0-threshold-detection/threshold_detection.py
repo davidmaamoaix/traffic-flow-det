@@ -2,7 +2,7 @@ import os
 import cv2 as cv
 import numpy as np
 
-from utils import load_yolo, output_stream
+from utils import load_yolo, output_stream, ImageEncoder
 
 
 def process_video(video):
@@ -20,6 +20,12 @@ def process_video(video):
         {}
     )
 
+    encoder = ImageEncoder(
+        'models/mars-small128.pb',
+        ['images:0'],
+        ['features:0']
+    )
+
     while True:
         ret, frame = reader.read()
 
@@ -27,6 +33,7 @@ def process_video(video):
             break
 
         boxes, labels = model.forward(frame)
+        features = encoder.encode(frame, boxes)
 
         for box, label in zip(boxes, labels):
             x, y, w, h = box
