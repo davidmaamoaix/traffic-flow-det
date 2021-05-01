@@ -6,6 +6,11 @@ import tensorflow as tf
 from .algo import crop_image
 
 
+class KalmanFilter:
+
+    def __init__(self, )
+
+
 def wrap_frozen_graph(graph_def, inputs, outputs, print_graph=False):
 
     def _imports_graph_def():
