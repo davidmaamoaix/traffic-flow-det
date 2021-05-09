@@ -21,7 +21,7 @@ def run(video_path):
         {}
     )
 
-    session = Session(model)
+    session = Session(model, writer, True)
 
     while True:
         ret, frame = reader.read()
@@ -31,15 +31,29 @@ def run(video_path):
 
         process_frame(frame, session)
 
+        if session.show_img and cv2.waitKey(1) & 0xFF == 27:
+            break
+
     reader.release()
     writer.release()
 
 
 def process_frame(frame, session):
-    pass
+    boxes, labels = session.model.forward(frame)
+
+    for box, label in zip(boxes, labels):
+        x, y, w, h = box
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 1)
+
+    if session.show_img:
+        cv2.imshow('img', frame)
+
+    session.writer.write(frame)
 
 
 class Session:
 
-    def __init__(self, model):
+    def __init__(self, model, writer, show_img=False):
         self.model = model
+        self.writer = writer
+        self.show_img = show_img
