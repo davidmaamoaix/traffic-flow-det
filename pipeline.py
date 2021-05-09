@@ -4,6 +4,8 @@ import numpy as np
 
 import config
 from misc import output_stream, load_yolo
+from tools import generate_detections
+from deep_sort import nn_matching, tracker
 
 
 def run(video_path):
@@ -21,7 +23,14 @@ def run(video_path):
         {}
     )
 
-    session = Session(model, writer, True)
+    metric = nn_matching.NearestNeighborDistanceMetric('cosine', 0.3)
+    tracking = tracker.Tracker(metric)
+    encoder = generate_detections.create_box_encoder(
+        config.ENCODER_PATH,
+        batch_size=1
+    )
+
+    session = Session(model, encoder, tracking, writer, True)
 
     while True:
         ret, frame = reader.read()
@@ -45,6 +54,14 @@ def process_frame(frame, session):
         x, y, w, h = box
         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 1)
 
+    extracts = session.encoder(frame, boxes)
+
+    # TODO: retain confidence from yolo
+    session.tracking.predict()
+    session.tracking.update([
+        Detection(box, 0.75, encoded) for box, encoded in zip(boxes, extracts)
+    ])
+
     if session.show_img:
         cv2.imshow('img', frame)
 
@@ -53,7 +70,9 @@ def process_frame(frame, session):
 
 class Session:
 
-    def __init__(self, model, writer, show_img=False):
+    def __init__(self, model, encoder, tracking, writer, show_img=False):
         self.model = model
+        self.encoder = encoder
+        self.tracking = tracking
         self.writer = writer
         self.show_img = show_img
