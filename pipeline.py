@@ -1,12 +1,14 @@
+import os
 import cv2
 import numpy as np
 
 import config
+from misc import output_stream, load_yolo
 
 
 def run(video_path):
 
-    reader = cv.VideoCapture(video)
+    reader = cv2.VideoCapture(video_path)
     writer = output_stream(reader)
 
     if not os.path.exists('output'):
