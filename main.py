@@ -11,9 +11,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Pipelines for traffic flow detection'
     )
-    parser.add_argument('video', type=str, help='Path of the input video')
-    parser.add_argument('pipeline', type=int, help='ID of the pipeline to use')
+    parser.add_argument('video', type=str, help='path of the input video')
     args = parser.parse_args()
 
-    pipeline = args.pipeline
     pipeline.run(args.video)
