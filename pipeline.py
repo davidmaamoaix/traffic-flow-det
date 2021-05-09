@@ -5,7 +5,7 @@ import numpy as np
 import config
 from misc import output_stream, load_yolo
 from tools import generate_detections
-from deep_sort import nn_matching, tracker
+from deep_sort import nn_matching, tracker, detection
 
 
 def run(video_path):
@@ -59,7 +59,8 @@ def process_frame(frame, session):
     # TODO: retain confidence from yolo
     session.tracking.predict()
     session.tracking.update([
-        Detection(box, 0.75, encoded) for box, encoded in zip(boxes, extracts)
+        detection.Detection(box, 0.75, encoded)
+        for box, encoded in zip(boxes, extracts)
     ])
 
     if session.show_img:
