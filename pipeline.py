@@ -3,9 +3,17 @@ import cv2
 import numpy as np
 
 import config
-from misc import output_stream, load_yolo
+from misc import output_stream, load_yolo, reverse_projection
 from tools import generate_detections
 from deep_sort import nn_matching, tracker, detection
+from PIL import Image
+
+MARKERS = (
+    (689, 412),
+    (766, 408),
+    (713, 517),
+    (836, 512)
+)
 
 
 def run(video_path):
@@ -31,6 +39,8 @@ def run(video_path):
     )
 
     session = Session(model, encoder, tracking, writer, True)
+
+    cv2.imwrite("frame1.jpg", reader.read()[1])
 
     while True:
         ret, frame = reader.read()
@@ -68,6 +78,12 @@ def process_frame(frame, session):
         x, y, x_end, y_end = tuple(map(int, tracked.to_tlbr()))
         cv2.rectangle(frame, (x, y), (x_end, y_end), color, 1)
         cv2.putText(frame, str(tracked.track_id), (x, y), 0, 0.5, color, 1)
+
+        x_world, y_world = reverse_projection(
+            (x + x_end) / 2,
+            (y + y_end) / 2,
+            MARKERS
+        )
 
     if session.show_img:
         cv2.imshow('img', frame)

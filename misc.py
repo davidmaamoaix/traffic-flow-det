@@ -107,3 +107,103 @@ def output_stream(reader):
         fps,
         (width, height)
     )
+
+
+def reverse_projection(x_coord, y_coord, marker):
+    w = 3600
+
+    xA, yA = marker[0]
+    xB, yB = marker[1]
+    xC, yC = marker[2]
+    xD, yD = marker[3]
+
+    aAB = xB - xA
+    bAB = yB - yA
+    xAB = xA * yB - xB * yA
+
+    aAC = xC - xA
+    bAC = yC - yA
+    xAC = xA * yC - xC * yA
+
+    aBD = xD - xB
+    bBD = yD - yB
+    xBD = xB * yD - xD * yB
+
+    aCD = xD - xC
+    bCD = yD - yC
+    xCD = xC * yD - xD * yC
+
+    tan_s_molecule = -bAB * bAC * xBD * aCD + bAC * aBD * bAB * xCD + \
+                     bCD * xAB * bBD * aAC - bAB * xCD * bBD * aAC - \
+                     bCD * bBD * xAC * aAB - bAC * xAB * aBD * bCD + \
+                     bAB * xAC * bBD * aCD + bCD * bAC * xBD * aAB
+
+    tan_s_denominator = -bAB * xAC * aBD * aCD + bAC * xAB * aBD * aCD - \
+                        bAC * aBD * aAB * xCD - aAC * xBD * bCD * aAB - \
+                        aCD * xAB * bBD * aAC + bAB * aAC * xBD * aCD + \
+                        aAB * xCD * bBD * aAC + aBD * xAC * bCD * aAB
+
+    tan_s = tan_s_molecule / tan_s_denominator
+    sin_s = tan_s * ((1 / (tan_s ** 2 + 1)) ** 0.5)
+    cos_s = (1 / (tan_s ** 2 + 1)) ** 0.5
+
+    sin_t_molecule = ((aBD * xAC - aAC * xBD) * sin_s + \
+                     (bBD * xAC - bAC * xBD) * cos_s) * \
+                     ((aCD * xAB - aAB * xCD) * sin_s + \
+                     (bCD * xAB - bAB * xCD) * cos_s)
+
+    sin_t_denominator = ((aCD * xAB - aAB * xCD) * cos_s + \
+                        (bAB * xCD - bCD * xAB) * sin_s) * \
+                        ((bBD * xAC - bAC * xBD) * sin_s + \
+                        (aAC * xBD - aBD * xAC) * cos_s)
+
+    sin_t = -((sin_t_molecule / sin_t_denominator) ** 0.5)
+
+    cos_t = (1 - sin_t ** 2) ** 0.5
+    tan_p_molecule = sin_t * ((bBD * xAC - bAC * xBD) * sin_s + \
+                     (aAC * xBD - aBD * xAC) * cos_s)
+
+    tan_p_denominator = (aBD * xAC - aAC * xBD) * sin_s + \
+                        (bBD * xAC - bAC * xBD) * cos_s
+
+    tan_p = tan_p_molecule / tan_p_denominator
+
+    sin_p = tan_p * ((1 / (tan_p ** 2 + 1)) ** 0.5)
+    cos_p = ((1 / (tan_p ** 2 + 1)) ** 0.5)
+
+    f_molecule = xBD * cos_p * cos_t
+    f_denominator = bBD * sin_p * cos_s - bBD * cos_p * sin_t * sin_s + \
+                    aBD * sin_p * sin_s + aBD * cos_p * sin_t * cos_s
+
+    f = abs(f_molecule / f_denominator)
+
+    l_molecule = w * (f * sin_t + xA * cos_t * sin_s + yA * cos_t * cos_s) * \
+                 (f * sin_t + xC * cos_t * sin_s + yC * cos_t * cos_s)
+
+    l_denominator = -(f * sin_t + xA * cos_t * sin_s + yA * cos_t * cos_s) * \
+                    (xC * cos_p * sin_s - xC * sin_p * sin_t * cos_s + \
+                    yC * cos_p * cos_s + yC * sin_p * sin_t * sin_s) + \
+                    (f * sin_t + xC * cos_t * sin_s + yC * cos_t * cos_s) * \
+                    (xA * cos_p * sin_s - xA * sin_p * sin_t * cos_s + \
+                    yA * cos_p * cos_s + yA * sin_p * sin_t * sin_s)
+
+    l = abs(l_molecule / l_denominator)
+
+    xQ_molecule = l * sin_p * (x_coord * sin_s + y_coord * cos_s) + \
+                  l * sin_t * cos_p * \
+                  (x_coord * cos_s - y_coord * sin_s)
+
+    xQ_denominator = x_coord * cos_t * sin_s + \
+                     y_coord * cos_t * cos_s + f * sin_t
+
+    xQ = xQ_molecule / xQ_denominator
+
+    yQ_molecule = -l * cos_p * (x_coord * sin_s + y_coord * cos_s) \
+                  + l * sin_p * sin_t * (x_coord * cos_s - y_coord * sin_s)
+
+    yQ_denominator = x_coord * cos_t * sin_s + \
+                     y_coord * cos_t * cos_s + f * sin_t
+
+    yQ = yQ_molecule / yQ_denominator
+
+    return xQ, yQ
