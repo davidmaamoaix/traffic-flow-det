@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 import config
-from misc import output_stream, load_yolo, reverse_projection
+from misc import output_stream, load_yolo, reverse_projection, distance
 from tools import generate_detections
 from deep_sort import nn_matching, tracker, detection
 from PIL import Image
@@ -14,6 +14,9 @@ MARKERS = (
     (713, 517),
     (836, 512)
 )
+
+ROAD_WIDTH = distance(MARKERS[0], MARKERS[1])
+print(reverse_projection(10, 10, MARKERS))
 
 
 def run(video_path):
@@ -85,6 +88,15 @@ def process_frame(frame, session):
             MARKERS
         )
 
+        x_prev, y_prev = session.speed.get(
+            tracked.track_id,
+            (x_world, y_world)
+        )
+        session.speed[tracked.track_id] = x_world, y_world
+
+        dist = distance((x_prev, y_prev), (x_world, y_world))
+        print(dist)
+
     if session.show_img:
         cv2.imshow('img', frame)
 
@@ -97,5 +109,6 @@ class Session:
         self.model = model
         self.encoder = encoder
         self.tracking = tracking
+        self.speed = {}
         self.writer = writer
         self.show_img = show_img

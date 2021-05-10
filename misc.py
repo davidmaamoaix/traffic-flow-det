@@ -109,6 +109,11 @@ def output_stream(reader):
     )
 
 
+def distance(a, b):
+    delta_x, delta_y = abs(b[0] - a[0]), abs(b[1] - a[1])
+    return (delta_x ** 2 + delta_y ** 2) ** 0.5
+
+
 def reverse_projection(x_coord, y_coord, marker):
     w = 3600
 
