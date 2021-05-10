@@ -50,9 +50,9 @@ def run(video_path):
 def process_frame(frame, session):
     boxes, labels = session.model.forward(frame)
 
-    for box, label in zip(boxes, labels):
-        x, y, w, h = box
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 1)
+    #for box, label in zip(boxes, labels):
+    #    x, y, w, h = box
+    #    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 1)
 
     extracts = session.encoder(frame, boxes)
 
@@ -62,6 +62,12 @@ def process_frame(frame, session):
         detection.Detection(box, 0.75, encoded)
         for box, encoded in zip(boxes, extracts)
     ])
+
+    color = (255, 255, 255)
+    for tracked in session.tracking.tracks:
+        x, y, x_end, y_end = tuple(map(int, tracked.to_tlbr()))
+        cv2.rectangle(frame, (x, y), (x_end, y_end), color, 1)
+        cv2.putText(frame, str(tracked.track_id), (x, y), 0, 0.5, color, 1)
 
     if session.show_img:
         cv2.imshow('img', frame)
