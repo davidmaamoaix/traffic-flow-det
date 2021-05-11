@@ -23,6 +23,7 @@ def run(video_path):
 
     reader = cv2.VideoCapture(video_path)
     writer = output_stream(reader)
+    fps = reader.get(cv2.CAP_PROP_FPS)
 
     if not os.path.exists('output'):
         os.mkdir('output')
@@ -41,7 +42,11 @@ def run(video_path):
         batch_size=1
     )
 
-    session = Session(model, encoder, tracking, writer, True)
+    conf = {
+        'show_img': True,
+        'fps': fps
+    }
+    session = Session(model, encoder, tracking, writer, conf)
 
     cv2.imwrite("frame1.jpg", reader.read()[1])
 
@@ -53,7 +58,7 @@ def run(video_path):
 
         process_frame(frame, session)
 
-        if session.show_img and cv2.waitKey(1) & 0xFF == 27:
+        if session.conf.get('show_img', False) and cv2.waitKey(1) & 0xFF == 27:
             break
 
     reader.release()
@@ -95,20 +100,30 @@ def process_frame(frame, session):
         session.speed[tracked.track_id] = x_world, y_world
 
         dist = distance((x_prev, y_prev), (x_world, y_world))
-        print(dist)
+        prev_frame = session.last_frame.get(
+            tracked.track_id,
+            session.counter - 1
+        )
+        delta_time = session.counter - prev_frame
 
-    if session.show_img:
+        speed = 3.6 * dist * session.conf.get('fps', 30) / delta_time / 1000
+        print(speed)
+
+    if session.conf.get('show_img', False):
         cv2.imshow('img', frame)
 
+    session.counter += 1
     session.writer.write(frame)
 
 
 class Session:
 
-    def __init__(self, model, encoder, tracking, writer, show_img=False):
+    def __init__(self, model, encoder, tracking, writer, conf):
         self.model = model
         self.encoder = encoder
         self.tracking = tracking
         self.speed = {}
         self.writer = writer
-        self.show_img = show_img
+        self.conf = conf
+        self.last_frame = {}
+        self.counter = 0
