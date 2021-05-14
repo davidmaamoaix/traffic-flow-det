@@ -106,8 +106,10 @@ def process_frame(frame, session):
         )
         delta_time = session.counter - prev_frame
 
-        speed = 3.6 * dist * session.conf.get('fps', 30) / delta_time / 1000
-        print(speed)
+        color = (255, 0, 0)
+
+        speed = 3.6 * dist * session.conf.get('fps', 30) / delta_time / 500
+        cv2.putText(frame, str(speed), (x + 30, y), 0, 0.5, color, 1)
 
     if session.conf.get('show_img', False):
         cv2.imshow('img', frame)
@@ -126,4 +128,5 @@ class Session:
         self.writer = writer
         self.conf = conf
         self.last_frame = {}
+        self.filter = {} # used for PID
         self.counter = 0

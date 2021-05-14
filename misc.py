@@ -66,6 +66,10 @@ class YoloWrapper:
         )
 
         indices = np.array(filtered).flatten()
+
+        if indices.size == 0:
+            return np.array([]), np.array([])
+
         valid_boxes = boxes[indices]
         output_classes = self.classes[predictions[indices]]
 
