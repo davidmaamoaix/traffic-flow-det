@@ -95,7 +95,7 @@ def process_frame(frame, session):
         )
 
         if tracked.track_id not in session.speed:
-            controller = FilterPID(0.5, 0.1, 50)
+            controller = FilterPID(0.52, 0.103, 50)
             session.speed[tracked.track_id] = (x_world, y_world, controller)
 
         x_prev, y_prev, pid_controller = session.speed[tracked.track_id]
