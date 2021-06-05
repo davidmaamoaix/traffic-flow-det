@@ -1,12 +1,13 @@
 import os
 import cv2
 import numpy as np
+from PIL import Image
 
 import config
 from misc import output_stream, load_yolo, reverse_projection, distance
 from tools import generate_detections
 from deep_sort import nn_matching, tracker, detection
-from PIL import Image
+from filter import FilterPID
 
 MARKERS = (
     (689, 412),
@@ -93,11 +94,13 @@ def process_frame(frame, session):
             MARKERS
         )
 
-        x_prev, y_prev = session.speed.get(
-            tracked.track_id,
-            (x_world, y_world)
-        )
-        session.speed[tracked.track_id] = x_world, y_world
+        if tracked.track_id not in session.speed:
+            controller = FilterPID(0.5, 0.1, 50)
+            session.speed[tracked.track_id] = (x_world, y_world, controller)
+
+        x_prev, y_prev, pid_controller = session.speed[tracked.track_id]
+
+        session.speed[tracked.track_id] = x_world, y_world, pid_controller
 
         dist = distance((x_prev, y_prev), (x_world, y_world))
         prev_frame = session.last_frame.get(
@@ -109,6 +112,8 @@ def process_frame(frame, session):
         color = (255, 0, 0)
 
         speed = 3.6 * dist * session.conf.get('fps', 30) / delta_time / 500
+        speed = pid_controller.update(speed)
+
         cv2.putText(frame, str(speed), (x + 30, y), 0, 0.5, color, 1)
 
     if session.conf.get('show_img', False):
